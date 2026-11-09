@@ -16,11 +16,13 @@ This roadmap distinguishes existing implementation from independently validated 
 - Exercise two physical machines and document network/proxy behavior
 - Review the UX at laptop and projector resolutions, and on different browsers
 - Add focused tests for new Mission Control overview endpoint and its failure conditions
+- Run the new comparison-integrity regression tests under GitHub Actions (local Java source compilation and five label smoke checks passed)
 
 ## Future improvements
 
 - Explicit run-to-evidence correlation rather than time-only grouping
 - Incident timeline with rule decision-to-action explanations
+- Store the defender policy/protection-mode snapshot **per run** rather than only at comparison creation
 - Baseline/false-positive experiments; measurement methodology and repeatable benchmarks
 - Better accessibility and responsive presentation
 - A short reproducible demo video with real traffic and observable evidence

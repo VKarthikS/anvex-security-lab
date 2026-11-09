@@ -1,66 +1,72 @@
-# ANVEX
+# ANVEX — Authentication Threat Detection & Response Lab
 
-### Explainable Authentication Threat Detection & Response Lab
+**Watch a controlled attack. See the detection decision. Inspect the evidence. Measure the defense.**
 
-**ANVEX** is a controlled cybersecurity experimentation platform. A Java-based **simulator** generates real HTTP authentication traffic against a separate Java **defender**, which independently detects suspicious behavior, records inspectable evidence, and optionally enforces application-level protection. Two web consoles make the full sequence observable.
+[![Build and test](https://github.com/VKarthikS/anvex-security-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/VKarthikS/anvex-security-lab/actions/workflows/ci.yml)
 
-**Built for cybersecurity education, investigation, and reproducible experiments — not for attacking third-party services or protecting production identity systems.**
+ANVEX is a two-service cybersecurity lab built with **Java 21, Spring Boot, React, and TypeScript**. Its simulator sends real HTTP authentication requests to a separate defender. The defender independently detects suspicious activity using configurable, time-windowed rules, creates inspectable evidence, and optionally enforces source-level protections. The UI displays server measurements rather than generating fake attack data.
 
-**Stack:** Java 21 · Spring Boot · React · TypeScript · Vite · H2 · Flyway · JUnit 5 · SSE
+> **Scope:** ANVEX is an educational blue-team engineering environment with dummy accounts. It is **not** a production authentication gateway or a tool for testing third-party targets.
 
-![ANVEX Defender monitoring interface](docs/screenshots/01-defender-monitor-observation.png)
+![Original v1 defender console showing active protection](docs/screenshots/05-defender-monitor-protection-on.png)
 
-> **Current state:** The original Java 21 platform includes tested authentication/detection/protection flows, evidence, a simulator, and an OFF/ON comparison. An **experimental Mission Control** screen has been integrated into the simulator frontend and API, but its complete cross-platform release and two-laptop behavior still require validation. Screenshots here show the original verified v1 interface, not the new Mission Control screen.
+## See ANVEX in two minutes
 
-## Why ANVEX exists
+| Moment | What you demonstrate | What the viewer learns |
+|---|---|---|
+| **1. Establish baseline** | Open the defender dashboard, show Protection **OFF** | Security telemetry can be collected without enforcing restrictions |
+| **2. Generate traffic** | Run **Repeated Guessing** against seeded dummy account(s) | Requests are made by the Java simulator, not animated by the browser |
+| **3. Investigate evidence** | Open the matching alert and the evidence dossier | The defender identifies a rule, threshold, time window, and action independently |
+| **4. Enable defense** | Reset the demo baseline; switch Protection **ON** and repeat **the exact same scenario/settings** | The defender begins rate limiting and may temporarily block the source |
+| **5. Compare results** | In History, compare the completed baseline and protected runs | The report uses measured results and flags incomplete, tiny, or non-matching experiments |
 
-Many security demos stop after showing an attack counter. ANVEX connects **the activity, the detection rule, the defensive decision, the evidence, and the measured outcome**. It makes defensive engineering decisions inspectable rather than treating detection as a black box.
+**Start here:** [Two-minute showcase guide](docs/PORTFOLIO_SHOWCASE.md) · [Full demonstration](docs/DEMO_SCRIPT.md) · [Architecture](ARCHITECTURE.md)
 
-## What it demonstrates
+**Actual interface screenshots from the original v1 build:**
 
-| Capability | Implementation |
+| Detection evidence | Simulator scenario controls |
 | --- | --- |
-| Controlled traffic generation | Separate Java simulator with bounded scenarios and a mandatory ANVEX identity/version handshake |
-| Independent detection | Server-side rolling windows; scenario labels are **not** trusted for classification |
-| Detection patterns | Suspected repeated guessing, suspected password spraying, unusually rapid login requests |
-| Enforcement | Configurable per-source token bucket and temporary source blocks; protection can be turned OFF to observe only |
-| Evidence | Rule matches, thresholds, observed counts, timestamps, policy version, associated request references, and response action |
-| Live analysis | React dashboards consuming JSON snapshots and server-sent events with reconnection handling |
-| Reproducible comparison | Simulator tracks actual completed requests, authentication outcomes, rejections, and latency for protection OFF vs ON |
-| Persistence | H2, Flyway migrations, bounded event queues, recorded analyst actions and policy state |
+| ![Original ANVEX evidence inspection view](docs/screenshots/02-defender-evidence.png) | ![Original ANVEX scenario interface](docs/screenshots/09-simulator-scenario.png) |
 
-### Request-to-response path
+The React simulator now also contains an **experimental Mission Control** screen that connects simulator progress with defender overview data. Its full cross-platform UI and two-physical-laptop behavior are still being validated; the screenshots above are **from v1**, not staged Mission Control results.
 
-```text
-Simulator (Java HttpClient)         Defender (Spring Boot)
-       |                                    |
-       |  HTTP login request                |
-       +----------------------------------->|
-                                            | 1. Count request and examine rolling window
-                                            | 2. Apply active block / token bucket (if ON)
-                                            | 3. Verify dummy account credentials (if admitted)
-                                            | 4. Evaluate behavioral detection rules
-                                            | 5. Produce evidence and optionally enforce block
-                                            | 6. Queue events for persistence + live updates
-       <------------------------------------+
-       HTTP result (success/failure/429/503)
+## How it works
+
+```mermaid
+flowchart LR
+    S["Java simulator<br/>bounded login scenarios"] -->|"HTTP + real requests"| A["Defender login API"]
+    A --> D["Java detection engine<br/>rolling windows"]
+    D --> P["Policy + source protection<br/>token bucket / temporary block"]
+    D --> E["Evidence + alerts"]
+    P --> R["Measured HTTP result"]
+    R --> S
+    E --> Q["Bounded event pipeline"]
+    Q --> H[("H2 + Flyway")]
+    Q --> U["React defender console<br/>snapshots + SSE"]
+    S --> M["React simulator console<br/>Mission Control / runs / history"]
 ```
 
-The attacker simulator and defender do not share a detection label. The defender classifies observed behavior using its own counters and timestamps.
+The simulator cannot declare what type of attack the defender detected. The defender evaluates its **own timestamped observations**; submitted scenario identifiers are never detection evidence.
 
-## Screenshots
+### Security decisions visible in the code
 
-| Live monitoring | Measured experiment comparison |
+| Engineering concern | ANVEX implementation |
 | --- | --- |
-| ![Defender monitor](docs/screenshots/05-defender-monitor-protection-on.png) | ![Protection comparison](docs/screenshots/12-simulator-comparison.png) |
+| **Behavioral detection** | Repeated guessing, suspected password spraying, unusually rapid requests; server-controlled rolling windows |
+| **Defensive enforcement** | Source-scoped token bucket, temporary blocks, ON/OFF observation mode, audited unblock |
+| **Explainable response** | Evidence includes triggering requests, observed counts, rule thresholds, timestamps, policy snapshot, action |
+| **Concurrency** | Per-source locks protect multi-step counting and decision logic |
+| **Operational reliability** | Bounded event queues, clear overload handling, H2 persistence, server-sent event reconnect behavior |
+| **Experiment integrity** | Separate transport errors from 429 rejections; comparable runs must have the same scenario, target and accepted configuration |
+| **Controlled scope** | Seeded dummy accounts, ANVEX identity handshake, disabled redirects, simulation request/concurrency caps |
 
-Additional original v1 screenshots live in [`docs/screenshots/`](docs/screenshots/).
+Key source entry points: [DetectionEngine](defender/src/main/java/com/anvex/defender/detection/DetectionEngine.java) · [LoginPipeline](defender/src/main/java/com/anvex/defender/security/LoginPipeline.java) · [ExperimentService](simulator/src/main/java/com/anvex/simulator/experiment/ExperimentService.java) · [Mission Control](frontend/apps/simulator/src/views/MissionView.tsx)
 
-## Quick start (developer)
+## Run locally
 
-**Prerequisites:** JDK 21, Node.js 20.19+ (22 recommended), npm, and an internet connection for the first dependency installation. The Maven Wrapper downloads Maven on first use. Packaged Java distributions require only JDK/JRE 21.
+**Requirements:** Java 21, Node.js 22 (or compatible Node 20.19+), npm. Maven is bootstrapped by the included wrapper. First build requires network access for dependencies.
 
-### Windows PowerShell
+**Windows PowerShell**
 
 ```powershell
 git clone https://github.com/VKarthikS/anvex-security-lab.git
@@ -68,7 +74,7 @@ cd anvex-security-lab
 powershell -ExecutionPolicy Bypass -File scripts\dev-start.ps1
 ```
 
-### macOS / Linux
+**macOS / Linux**
 
 ```bash
 git clone https://github.com/VKarthikS/anvex-security-lab.git
@@ -76,64 +82,42 @@ cd anvex-security-lab
 bash scripts/dev-start.sh
 ```
 
-The dev-start scripts install frontend dependencies, build both React apps, package the Java services, then start both services. Once healthy:
+Open **Defender** at <http://127.0.0.1:8080> and **Simulator / Mission Control** at <http://127.0.0.1:8081>.
 
-- **Defender console:** <http://127.0.0.1:8080>
-- **Simulator / Mission Control:** <http://127.0.0.1:8081>
-
-**Run the checks manually:**
+**Validate source and tests:**
 
 ```bash
 npm ci --prefix frontend
 npm run typecheck --prefix frontend
 npm run build --prefix frontend
-bash ./mvnw -B clean verify
+bash ./mvnw -B --no-transfer-progress clean verify
 ```
 
-On Windows, replace the final line with `.\mvnw.cmd -B clean verify`.
+On Windows, use `./mvnw.cmd` in place of `bash ./mvnw`. CI performs these checks on each pull request and pushes to `main`. See [Operations](docs/OPERATIONS.md) for two-machine networking and troubleshooting.
 
-### Safe demo walkthrough
-
-1. Start the defender and simulator locally. Verify that the simulator recognizes the **ANVEX** handshake.
-2. Begin with protection **OFF** and run the **repeated guessing** scenario using seeded dummy users.
-3. Inspect detector rule evidence, observed counters, and alert timestamps on the defender.
-4. Reset/baseline according to the demo guide; enable protection **ON** and repeat the scenario.
-5. Review measured blocks, rejected requests, alerts, and the simulator comparison report. Do not assume a fixed percentage improvement.
-
-See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for a longer guided session and [`docs/OPERATIONS.md`](docs/OPERATIONS.md) for two-machine configuration.
-
-## Repository map
+## Project layout
 
 ```text
-common/       Shared Java protocol records and response contracts
-simulator/    Traffic scenarios, HTTP client, run management, report/overview APIs
-  frontend → frontend/apps/simulator (including experimental Mission Control)
-defender/     Authentication, detection, protection, persistence, analyst APIs
-  frontend → frontend/apps/defender
-frontend/    Two React/Vite apps + shared design system and typed API client
-docs/        Verification record, operations, API contract, design, screenshots
-scripts/     Development, demo connectivity, smoke test, release helpers
-.github/     Automated build and test workflow
+common/       Shared protocol DTOs
+simulator/    Java HTTP traffic generator, run lifecycle, measured comparisons
+              + same-origin overview endpoint for Mission Control
+defender/     Authentication, rules, protection, evidence, event processing, persistence
+frontend/    React/TypeScript apps + shared API clients, components, design tokens
+docs/        Verification records, live demo guides, screenshots, API contracts
+scripts/     Build, connectivity, smoke-test and release helpers
+.github/     Continuous integration
 ```
 
-## Engineering decisions worth reviewing
+## What is verified and what isn't
 
-- **Explainability:** Independent, deterministic rule evaluation and policy snapshots rather than an invented 'AI confidence' score.
-- **Concurrency:** Per-source locking for multi-step detection decisions, instead of assuming a concurrent map alone makes a decision atomic.
-- **Security separation:** Analyst mutation controls are loopback-restricted; simulator is not permitted to toggle protection through its ordinary API.
-- **Safety:** The simulator expects an ANVEX identity handshake, disables redirects, and caps requests, concurrency, and duration.
-- **Operational visibility:** Bounded queues, telemetry aggregation/drop counters, and an explicit overload pathway.
+- **Already demonstrated:** Initial GitHub Actions **Build and test** workflow passed; original development records describe 33 Java tests and a smoke suite. The repository's live CI status is the authority for later commits.
+- **Needs an end-to-end demo:** Mission Control against a fresh build and the source-level comparison-integrity regression tests on GitHub Actions.
+- **Not yet demonstrated:** A real two-laptop physical LAN exercise, broad false-positive evaluation, production TLS and authentication hardening, or statistically significant detection accuracy.
 
-For implementation details, read [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md).
+See [Verification](docs/VERIFICATION.md), [Roadmap](docs/ROADMAP.md), and [Security & limitations](SECURITY.md). The project is a learning lab: the classifier does **not** prove password reuse, and source-IP blocks may affect legitimate users behind shared NAT.
 
-## Honest limitations
+## Credits and use
 
-ANVEX is a **laboratory**, not a general-purpose intrusion detection system or production authentication gateway. It uses seeded dummy accounts, deliberately narrow behavioral heuristics and an embedded database. Its two-laptop demonstration is LAN-oriented and uses HTTP without TLS by default. A source-IP block may affect legitimate clients sharing the same address. Suspected spraying cannot prove password reuse. The earlier verification log does **not** include a real two-machine physical test or a statistically rigorous detection study. The new Mission Control feature needs additional end-to-end testing.
+ANVEX originated as a student team project. This portfolio repository is maintained under [@VKarthikS](https://github.com/VKarthikS); original collaborators should be credited according to their contributions. This repository has **no open-source license yet**; public visibility alone does not grant reuse rights.
 
-See [`SECURITY.md`](SECURITY.md), [`docs/VERIFICATION.md`](docs/VERIFICATION.md) and [`docs/ROADMAP.md`](docs/ROADMAP.md).
-
-## Project status and authorship
-
-ANVEX began as a student cybersecurity project. This repository is maintained under [@VKarthikS](https://github.com/VKarthikS) to document and expand the engineering work. Contributors to the original team implementation should be acknowledged in the repository once confirmed.
-
-No open-source license has yet been selected. Until one is added, the repository is publicly viewable but does **not** automatically grant reuse rights.
+For implementation discussions, see [Interview notes](docs/INTERVIEW_NOTES.md).

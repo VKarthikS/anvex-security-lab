@@ -1,25 +1,31 @@
-# Publish ANVEX to a fresh GitHub repository
+# Maintaining the ANVEX GitHub project
 
-The original `VKarthikS/ANVEX` JavaFX project should remain intact. The recommended new project is **`VKarthikS/anvex-security-lab`**.
+Repository: <https://github.com/VKarthikS/anvex-security-lab>
 
-1. While signed into GitHub as **VKarthikS**, visit <https://github.com/new>.
-2. Repository owner: `VKarthikS`; name: `anvex-security-lab`.
-3. Suggested description: `Explainable authentication threat detection and response lab built with Java 21, Spring Boot, and React.`
-4. Start **Private** while confirming attribution, demo screenshots, and project permissions; switch to Public for your résumé once checked.
-5. Do **not** initialize with README, `.gitignore`, or license — they are already prepared here.
-6. Extract the supplied `ANVEX-portfolio-ready.zip`, open a terminal *inside* the `ANVEX-portfolio-ready` folder, and run:
+The initial source import is already complete. Keep `main` stable; open a feature branch for each improvement and merge only after GitHub Actions passes.
+
+## One-branch update workflow
 
 ```bash
-git init
-git add .
-git commit -m "Initial import: ANVEX authentication defense lab"
-git branch -M main
-git remote add origin https://github.com/VKarthikS/anvex-security-lab.git
-git push -u origin main
+git switch main
+git pull --ff-only origin main
+git switch -c feat/showcase-integrity
+# Copy verified updated files into this working tree.
+git status --short
+git add README.md docs simulator/src frontend/apps/simulator/src/views/HistoryView.tsx
+git commit -m "Improve ANVEX showcase and comparison integrity"
+git push -u origin feat/showcase-integrity
 ```
 
-If git reports that a user name/email is missing, set those values to your intended public commit attribution. GitHub will request authentication; use GitHub Credential Manager or the supported browser login flow, **never** paste tokens into chat or commit them.
+Open the Pull requests tab on GitHub and merge after all CI checks pass. Do not commit `.env`, `.git`, `node_modules`, runtime databases, `target/`, or logs.
 
-Before changing the repository to Public, review the files on GitHub, run Actions CI, confirm the screenshots depict the current release accurately, and add appropriate contributor credit and a license only when you've chosen terms.
+## Release readiness
 
-**Suggested topics:** `cybersecurity`, `blue-team`, `java`, `spring-boot`, `react`, `authentication`, `intrusion-detection`, `security-lab`, `incident-response`
+- [ ] Build and test workflow green on the feature branch
+- [ ] Defender and simulator start locally
+- [ ] Comparison check: identical runs accepted; mismatched scenario/target/settings produce `incomparable-parameters` and no percentages
+- [ ] The newest Mission Control UI exercised with actual backend traffic
+- [ ] Genuine screenshot of a completed comparison included in README **only after capture**
+- [ ] Contributors correctly credited, and license terms decided
+- [ ] Two physical machines tested before describing LAN operation as verified
+- [ ] Change repository visibility to Public only after a code/data review

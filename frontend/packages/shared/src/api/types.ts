@@ -435,7 +435,7 @@ export interface ComparisonSide {
   endedAt: string | null;
 }
 
-export type ComparisonLabel = 'measured-comparison' | 'small-sample' | 'incomplete-comparison';
+export type ComparisonLabel = 'measured-comparison' | 'small-sample' | 'incomplete-comparison' | 'incomparable-parameters';
 
 export interface ComparisonReduction {
   sentReductionPercent: number | null;
