@@ -118,6 +118,8 @@ Non-loopback callers receive `403` with `code=analyst_loopback_required`.
 | `POST /api/v1/experiments` | `{ "baselineRunId": "...", "candidateRunId": "..." }` → `ComparisonReport` |
 | `GET /api/v1/experiments` | Retained comparison reports |
 
+Comparison reports label mismatched scenario, target URL, or full accepted run configuration as `incomparable-parameters`. For those reports and incomplete runs, reduction percentages are `null` rather than potentially misleading. `small-sample` flags matching runs with fewer than ten sent requests. A report's `settingsSnapshot` is taken **at comparison time** and is **not** proof that the baseline/candidate used different protection modes. The full accepted configurations must be compared, not just the selected scenario name.
+
 Simulator run state machine: `IDLE → RUNNING → STOPPING → COMPLETED | CANCELLED | FAILED`. Overlapping runs are rejected with `409 run_in_progress`.
 
 ## 7. Error codes

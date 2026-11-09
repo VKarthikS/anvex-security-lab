@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -47,6 +48,10 @@ public class ExperimentService {
         RunSnapshot candidate = runManager.find(candidateRunId)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown candidate run: " + candidateRunId));
 
+        if (baselineRunId.equals(candidateRunId)) {
+            throw new IllegalArgumentException("Baseline and candidate must be different runs.");
+        }
+
         Map<String, Object> baselineCounters = defenderCounters(baselineRunId);
         Map<String, Object> candidateCounters = defenderCounters(candidateRunId);
         Map<String, Object> settings = defenderPolicy();
@@ -54,20 +59,33 @@ public class ExperimentService {
         ComparisonReport.Side baselineSide = side(baseline, baselineCounters);
         ComparisonReport.Side candidateSide = side(candidate, candidateCounters);
 
+        String verdict = label(baseline, candidate);
+        boolean comparable = sameConfiguration(baseline, candidate)
+                && RunSnapshot.COMPLETED.equals(baseline.state())
+                && RunSnapshot.COMPLETED.equals(candidate.state());
+        // Never show reduction percentages for different scenarios/configurations, or unfinished runs.
+        // Raw measurements remain available in the report for debugging and investigation.
         ComparisonReport.Reduction reduction = new ComparisonReport.Reduction(
-                percent(toDouble(baselineSide.sent()), toDouble(candidateSide.sent())),
-                percent(baselineSide.defenderReceived(), candidateSide.defenderReceived()),
-                percent(baselineSide.defenderReachedAuthentication(), candidateSide.defenderReachedAuthentication()),
-                candidateSide.defenderRateLimited() == null || baselineSide.defenderRateLimited() == null
-                        ? null
-                        : candidateSide.defenderRateLimited() - baselineSide.defenderRateLimited(),
-                meaningful(baseline, candidate),
-                label(baseline, candidate));
+                comparable ? percent(toDouble(baselineSide.sent()), toDouble(candidateSide.sent())) : null,
+                comparable ? percent(baselineSide.defenderReceived(), candidateSide.defenderReceived()) : null,
+                comparable ? percent(baselineSide.defenderReachedAuthentication(), candidateSide.defenderReachedAuthentication()) : null,
+                comparable && baselineSide.defenderRateLimited() != null && candidateSide.defenderRateLimited() != null
+                        ? candidateSide.defenderRateLimited() - baselineSide.defenderRateLimited()
+                        : null,
+                "measured-comparison".equals(verdict),
+                verdict);
 
-        List<String> caveats = List.of(
+        List<String> caveats = new ArrayList<>(List.of(
                 "Incoming traffic continues while protection is ON: the reduction is in requests reaching authentication.",
                 "The run id is experiment metadata only; it never influences defender classification.",
-                "Protection does not make failed credentials succeed: the outcome remains a failed authentication.");
+                "Protection does not make failed credentials succeed: the outcome remains a failed authentication.",
+                "The policy snapshot is read at comparison time; it is not a per-run policy history."));
+        if (!sameConfiguration(baseline, candidate)) {
+            caveats.add("Scenarios, target URLs, or accepted run settings differ; percentage reductions are suppressed.");
+        }
+        if (baseline.counters().transportErrors() > 0 || candidate.counters().transportErrors() > 0) {
+            caveats.add("At least one run experienced transport errors. Interpret the outcome carefully.");
+        }
 
         ComparisonReport report = new ComparisonReport(
                 UUID.randomUUID().toString(),
@@ -79,8 +97,8 @@ public class ExperimentService {
                 baselineSide,
                 candidateSide,
                 reduction,
-                label(baseline, candidate),
-                caveats);
+                verdict,
+                List.copyOf(caveats));
         reports.add(report);
         synchronized (reports) {
             while (reports.size() > 20) {
@@ -134,11 +152,11 @@ public class ExperimentService {
         body.put("candidateRatePerSecond", candidate.config() == null ? null : candidate.config().ratePerSecond());
         body.put("baselineDurationSeconds", baseline.config() == null ? null : baseline.config().durationSeconds());
         body.put("candidateDurationSeconds", candidate.config() == null ? null : candidate.config().durationSeconds());
-        body.put("identicalParameters", baseline.config() != null && candidate.config() != null
-                && baseline.config().ratePerSecond() == candidate.config().ratePerSecond()
-                && baseline.config().durationSeconds() == candidate.config().durationSeconds()
-                && baseline.config().requestLimit() == candidate.config().requestLimit()
-                && baseline.config().concurrency() == candidate.config().concurrency());
+        body.put("baselineTargetUrl", baseline.targetBaseUrl());
+        body.put("candidateTargetUrl", candidate.targetBaseUrl());
+        body.put("baselineUsernames", baseline.config() == null ? List.of() : baseline.config().targetUsernames());
+        body.put("candidateUsernames", candidate.config() == null ? List.of() : candidate.config().targetUsernames());
+        body.put("identicalParameters", sameConfiguration(baseline, candidate));
         return body;
     }
 
@@ -161,19 +179,22 @@ public class ExperimentService {
         return Math.round((baseline - candidate) / baseline * 10000.0) / 100.0;
     }
 
-    private static Boolean meaningful(RunSnapshot baseline, RunSnapshot candidate) {
-        boolean complete = RunSnapshot.COMPLETED.equals(baseline.state())
-                || RunSnapshot.CANCELLED.equals(baseline.state());
-        boolean candidateComplete = RunSnapshot.COMPLETED.equals(candidate.state())
-                || RunSnapshot.CANCELLED.equals(candidate.state());
-        return complete && candidateComplete && baseline.counters().sent() >= 10;
+    /** A comparison is only like-for-like when its full accepted run settings and target match. */
+    static boolean sameConfiguration(RunSnapshot baseline, RunSnapshot candidate) {
+        return baseline.config() != null
+                && baseline.config().equals(candidate.config())
+                && Objects.equals(baseline.scenarioId(), candidate.scenarioId())
+                && Objects.equals(baseline.targetBaseUrl(), candidate.targetBaseUrl());
     }
 
-    private static String label(RunSnapshot baseline, RunSnapshot candidate) {
+    static String label(RunSnapshot baseline, RunSnapshot candidate) {
         if (!RunSnapshot.COMPLETED.equals(baseline.state()) || !RunSnapshot.COMPLETED.equals(candidate.state())) {
             return "incomplete-comparison";
         }
-        if (baseline.counters().sent() < 10) {
+        if (!sameConfiguration(baseline, candidate)) {
+            return "incomparable-parameters";
+        }
+        if (baseline.counters().sent() < 10 || candidate.counters().sent() < 10) {
             return "small-sample";
         }
         return "measured-comparison";

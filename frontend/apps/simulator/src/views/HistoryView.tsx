@@ -19,6 +19,7 @@ const LABEL_TONE: Record<string, 'signal' | 'warn' | 'alert' | 'mute'> = {
   'measured-comparison': 'signal',
   'small-sample': 'warn',
   'incomplete-comparison': 'alert',
+  'incomparable-parameters': 'warn',
 };
 
 function RunTable({
@@ -355,7 +356,8 @@ export function HistoryView() {
         <div className="stack stack--tight">
           <p className="muted">
             The comparison is computed by the simulator from the counters that were actually measured in both runs. No
-            fixed percentage is assumed and nothing is extrapolated.
+            fixed percentage is assumed and nothing is extrapolated. Different scenarios or settings are marked
+            incomparable and do not receive reduction percentages.
           </p>
           <div className="row row--wrap">
             <span className="mono comparison__slot">
