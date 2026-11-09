@@ -1,0 +1,36 @@
+server:
+  port: ${ANVEX_SIMULATOR_PORT:8081}
+  address: ${ANVEX_SIMULATOR_ADDRESS:127.0.0.1}
+  shutdown: graceful
+  error:
+    include-message: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: anvex-simulator
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  mvc:
+    problemdetails:
+      enabled: false
+
+anvex:
+  build-version: 1.0.0
+  build-time: ${ANVEX_BUILD_TIME:2026-01-01T00:00:00Z}
+  simulator:
+    target-base-url: ${ANVEX_TARGET_BASE_URL:http://127.0.0.1:8080}
+    connect-timeout: 2s
+    request-timeout: 3s
+    default-concurrency: 4
+    concurrency-cap: 8
+    rate-cap: 20
+    duration-cap: 120
+    request-cap: 1000
+
+logging:
+  level:
+    root: INFO
+    com.anvex: INFO
+  file:
+    name: ${ANVEX_SIMULATOR_LOG_FILE:./logs/simulator.log}

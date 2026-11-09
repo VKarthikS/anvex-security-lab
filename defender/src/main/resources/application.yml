@@ -1,0 +1,71 @@
+server:
+  port: ${ANVEX_DEFENDER_PORT:8080}
+  address: ${ANVEX_DEFENDER_ADDRESS:0.0.0.0}
+  shutdown: graceful
+  error:
+    include-message: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: anvex-defender
+  datasource:
+    url: jdbc:h2:file:${ANVEX_DEFENDER_DATA_DIR:./data}/anvex;DB_CLOSE_ON_EXIT=FALSE;AUTO_SERVER=FALSE
+    driver-class-name: org.h2.Driver
+    username: ${ANVEX_DEFENDER_DB_USER:anvex}
+    password: ${ANVEX_DEFENDER_DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+  h2:
+    console:
+      enabled: false
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  mvc:
+    problemdetails:
+      enabled: false
+
+anvex:
+  build-version: 1.0.0
+  build-time: ${ANVEX_BUILD_TIME:2026-01-01T00:00:00Z}
+  data-dir: ${ANVEX_DEFENDER_DATA_DIR:./data}
+  policy-version: anvex-policy-1.0.0
+  initial-protection-mode: OFF
+  detection:
+    repeated-guessing-failure-threshold: 8
+    repeated-guessing-window: 30s
+    spraying-failure-threshold: 10
+    spraying-distinct-account-threshold: 8
+    spraying-window: 60s
+    rapid-request-threshold: 30
+    rapid-request-window: 5s
+    max-tracked-sources: 5000
+    max-tracked-account-pairs: 20000
+    stale-entry-retention: 15m
+  protection:
+    token-bucket-requests-per-second: 5
+    token-bucket-burst-capacity: 10
+    block-duration: 30s
+  queue:
+    capacity: 10000
+    critical-capacity: 2000
+    worker-threads: 2
+    batch-size: 50
+    shutdown-drain-timeout: 10s
+
+logging:
+  level:
+    root: INFO
+    com.anvex: INFO
+  file:
+    name: ${ANVEX_DEFENDER_LOG_FILE:./logs/defender.log}

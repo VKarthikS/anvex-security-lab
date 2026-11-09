@@ -1,0 +1,98 @@
+/* ANVEX design tokens — see docs/DESIGN.md.
+   Fonts are vendored locally: no CDN, no remote font request, no analytics. */
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('../../assets/fonts/SpaceGrotesk-latin.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('../../assets/fonts/IBMPlexMono-Regular-latin.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('../../assets/fonts/IBMPlexMono-Medium-latin.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('../../assets/fonts/IBMPlexMono-SemiBold-latin.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+
+  /* surfaces */
+  --ink-900: #05070a;
+  --ink-800: #0a0e14;
+  --ink-700: #111722;
+  --ink-600: #17202f;
+
+  /* structure */
+  --line: rgba(148, 163, 184, 0.16);
+  --line-strong: rgba(148, 163, 184, 0.32);
+  --line-signal: rgba(67, 232, 200, 0.32);
+
+  /* type */
+  --text-hi: #e8eef7;
+  --text-lo: #8b9ab0;
+  --text-dim: #627084;
+
+  /* signal colours */
+  --signal: #43e8c8;
+  --signal-soft: rgba(67, 232, 200, 0.14);
+  --warn: #f5b74e;
+  --warn-soft: rgba(245, 183, 78, 0.14);
+  --alert: #ff5d73;
+  --alert-soft: rgba(255, 93, 115, 0.14);
+  --violet: #9d7bff;
+  --violet-soft: rgba(157, 123, 255, 0.14);
+
+  /* typography */
+  --font-display: 'Space Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Cascadia Mono', Consolas, monospace;
+
+  /* spacing scale: 4 / 8 / 12 / 24 / 40 / 64 */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 24px;
+  --s5: 40px;
+  --s6: 64px;
+
+  /* radii */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 14px;
+
+  /* motion */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur-base: 220ms;
+  --dur-slow: 420ms;
+
+  /* elevation */
+  --shadow-panel: 0 1px 0 rgba(232, 238, 247, 0.03) inset, 0 18px 40px -32px rgba(0, 0, 0, 0.9);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "anvex-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ANVEX signal-room frontends: defender console and simulator station.",
+  "workspaces": [
+    "packages/shared",
+    "apps/defender",
+    "apps/simulator"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspace @anvex/app-defender && npm run typecheck --workspace @anvex/app-simulator",
+    "build": "npm run build --workspace @anvex/app-defender && npm run build --workspace @anvex/app-simulator",
+    "dev:defender": "npm run dev --workspace @anvex/app-defender",
+    "dev:simulator": "npm run dev --workspace @anvex/app-simulator"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}
