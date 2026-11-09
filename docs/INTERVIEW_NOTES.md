@@ -14,7 +14,7 @@
 
 **How do you measure a defense?** Compare two completed runs on the same target, same scenario, same username set, rate, duration, request cap and concurrency. Examine defender-received versus authentication-admitted requests, rather than claiming that inbound traffic disappears. ANVEX explicitly distinguishes HTTP 429 responses from transport errors.
 
-**What would you improve next?** Capture protection/policy snapshots with each run, link evidence IDs to runs without trusting them as a classifier, test noisy legitimate baselines, add authenticated analyst access and TLS for non-lab deployment, and benchmark false positives/latency.
+**What would you improve next?** Capture protection/policy snapshots with each run, extend bounded, request-ID-based run evidence correlation beyond the 20 recent records, test noisy legitimate baselines, add authenticated analyst access and TLS for non-lab deployment, and benchmark false positives/latency.
 
 ## Résumé bullet candidates
 

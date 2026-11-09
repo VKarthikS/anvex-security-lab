@@ -144,3 +144,19 @@ Simulator run state machine: `IDLE → RUNNING → STOPPING → COMPLETED | CANC
 * On connect, the client **first** fetches the corresponding snapshot endpoint, then subscribes; the server sends a `hello` event with the current sequence so the client can detect gaps.
 * Reconnect: client re-fetches the snapshot and resubscribes (EventSource auto-reconnect plus explicit snapshot recovery). The server keeps a bounded replay buffer (last 500 events) and sends `resync` if the requested `Last-Event-ID` is no longer available.
 * Server-side subscription buffers are bounded (64 events per subscriber); overflow emits a `lag` event instructing the client to re-snapshot.
+
+## Mission Control decision correlation (experimental)
+
+`GET /api/v1/target/overview?runId=<simulator-run-id>` is a **read-only**
+simulator endpoint. A compatible defender handshake precedes the dashboard request.
+When a run ID is given and its original target still matches the configured target,
+`runEvidence` contains `correlationAvailable`, `observedRequestIds`,
+`inspectedRecentDecisions`, `decisions` and `caveat`.
+
+`decisions` are selected by intersection of **defender-generated request IDs returned to
+that simulator run** and the `triggeringEventIds` in actual defender evidence, not by
+matching timestamps or by trusting attacker-supplied scenario labels. Matches show
+which run request triggered a decision; rolling counters may also contain earlier
+activity. The dashboard provides only 20 recent decisions, so absence of a match
+does not prove absence of detection. Request-ID history is bounded and in memory.
+No new analyst-control endpoints are exposed.
