@@ -389,6 +389,16 @@ export interface TargetConfig {
   baseUrl: string;
 }
 
+/** Evidence tied to a run by exact defender-issued request IDs (not by timestamps or scenario labels). */
+export interface RunEvidence {
+  runId: string;
+  correlationAvailable: boolean;
+  observedRequestIds: number;
+  inspectedRecentDecisions: number;
+  decisions: EvidenceSnapshot[];
+  caveat: string;
+}
+
 /** Verified, read-only defender data relayed by the simulator's same-origin API. */
 export interface DefenderOverview {
   targetBaseUrl: string;
@@ -397,6 +407,7 @@ export interface DefenderOverview {
   available: boolean;
   message: string;
   snapshot: DashboardSnapshot | null;
+  runEvidence: RunEvidence | null;
 }
 
 export interface TargetHandshake {

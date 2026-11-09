@@ -289,8 +289,9 @@ export class SimulatorApi {
     });
   }
 
-  defenderOverview(): Promise<ApiResponse<DefenderOverview>> {
-    return requestJson<DefenderOverview>(this.baseUrl, '/api/v1/target/overview');
+  defenderOverview(runId?: string): Promise<ApiResponse<DefenderOverview>> {
+    const path = runId ? `/api/v1/target/overview?runId=${encodeURIComponent(runId)}` : '/api/v1/target/overview';
+    return requestJson<DefenderOverview>(this.baseUrl, path);
   }
 
   testTarget(): Promise<ApiResponse<TargetHandshake>> {

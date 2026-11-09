@@ -12,6 +12,7 @@ public record DefenderOverview(
         boolean compatible,
         boolean available,
         String message,
-        Map<String, Object> snapshot
+        Map<String, Object> snapshot,
+        RunEvidence runEvidence
 ) {
 }

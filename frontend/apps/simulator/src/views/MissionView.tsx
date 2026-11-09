@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Banner,
   formatDateTime,
@@ -8,31 +8,11 @@ import {
   Panel,
   StatusPill,
   type DefenderOverview,
-  type EvidenceSnapshot,
 } from '@anvex/shared';
 
 import { useSimulator } from '../state/SimulatorContext';
 
 const REFRESH_INTERVAL_MS = 2500;
-
-function evidenceInRunWindow(
-  evidence: EvidenceSnapshot[],
-  startedAt: string | null,
-  endedAt: string | null,
-): EvidenceSnapshot[] {
-  // These records are from the entire defender, NOT securely attributed to the run.
-  // Filtering the timestamps only avoids showing obviously older decisions.
-  if (!startedAt) return [];
-  const start = Date.parse(startedAt);
-  const end = endedAt ? Date.parse(endedAt) + 1000 : Infinity;
-  if (!Number.isFinite(start)) return [];
-  return evidence
-    .filter((record) => {
-      const time = Date.parse(record.createdAt);
-      return Number.isFinite(time) && time >= start && time <= end;
-    })
-    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-}
 
 function displayScenario(id: string | null) {
   if (!id) return 'No scenario selected';
@@ -56,9 +36,10 @@ export function MissionView() {
   const [overviewError, setOverviewError] = useState<string | null>(null);
   const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null);
 
+  const runId = currentRun?.runId;
   const refreshOverview = useCallback(async (stillActive: () => boolean) => {
     try {
-      const response = await api.defenderOverview();
+      const response = await api.defenderOverview(runId ?? undefined);
       if (!stillActive()) return;
       setOverview(response.data);
       setOverviewError(null);
@@ -68,7 +49,7 @@ export function MissionView() {
       setOverview(null);
       setOverviewError(cause instanceof Error ? cause.message : 'Could not read defender status.');
     }
-  }, [api]);
+  }, [api, runId]);
 
   useEffect(() => {
     let active = true;
@@ -85,10 +66,8 @@ export function MissionView() {
   }, [refreshOverview]);
 
   const defender = overview?.available ? overview.snapshot : null;
-  const currentEvidence = useMemo(
-    () => evidenceInRunWindow(defender?.recentEvidence ?? [], currentRun?.startedAt ?? null, currentRun?.endedAt ?? null),
-    [defender?.recentEvidence, currentRun?.startedAt, currentRun?.endedAt],
-  );
+  const correlation = overview?.runEvidence?.runId === runId ? overview?.runEvidence ?? null : null;
+  const currentEvidence = correlation?.correlationAvailable ? correlation.decisions : [];
   const counters = currentRun?.counters;
   const sent = counters?.sent ?? 0;
   const planned = counters?.planned ?? 0;
@@ -215,8 +194,12 @@ export function MissionView() {
             {currentEvidence.length === 0 ? (
               <div className="mission-empty">
                 <Icon name="evidence" size={28} />
-                <strong>No matching-time evidence in the recent snapshot</strong>
-                <p>Detection may not have occurred, the defender may be unavailable, or an older decision may no longer be among the 20 most recent records.</p>
+                <strong>No request-linked evidence in the recent snapshot</strong>
+                <p>{!runId
+                  ? 'Launch a controlled simulation to generate traceable request IDs.'
+                  : !correlation?.correlationAvailable
+                    ? 'Request ID correlation is unavailable for this run or target.'
+                    : 'None of the available recent defender decisions reference a request ID from this run. Older evidence may be outside the snapshot.'}</p>
               </div>
             ) : (
               <div className="mission-evidence-list">
@@ -233,7 +216,9 @@ export function MissionView() {
                 ))}
               </div>
             )}
-            <p className="mission-caveat">Evidence is selected by timestamp from the defender's latest records. It is <strong>not</strong> proven to belong to this run; other concurrent traffic may also generate detections. Run-scoped decision correlation is a future backend enhancement.</p>
+            <p className="mission-caveat">{correlation?.correlationAvailable
+              ? `${formatInteger(currentEvidence.length)} matched decision(s) in ${formatInteger(correlation.inspectedRecentDecisions)} recent records, using ${formatInteger(correlation.observedRequestIds)} defender-issued request ID(s). ${correlation.caveat}`
+              : correlation?.caveat ?? 'Run evidence is available only after the simulator receives server-issued request IDs from the configured defender. No timing-based attribution is shown.'}</p>
           </div>
         </Panel>
         <Panel title="04 / Defender response" meta={verified ? 'Verified backend snapshot' : 'Waiting for defender'} tone={mode === 'ON' ? 'signal' : 'warn'}>

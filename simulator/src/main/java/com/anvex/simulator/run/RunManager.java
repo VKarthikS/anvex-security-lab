@@ -23,7 +23,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Set;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
@@ -51,6 +54,36 @@ public class RunManager {
 
     private final AtomicReference<ActiveRun> active = new AtomicReference<>();
     private final List<RunSnapshot> history = Collections.synchronizedList(new ArrayList<>());
+
+    // Correlation uses server-issued request IDs observed in real defender responses, never the
+    // client-supplied runId as proof of an attack. Retain a bounded set for recent experiments.
+    private static final int MAX_CORRELATION_RUNS = 40;
+    private final Map<String, Set<String>> requestIdsByRun = new LinkedHashMap<>();
+
+    private void trackRun(String runId) {
+        synchronized (requestIdsByRun) {
+            requestIdsByRun.put(runId, ConcurrentHashMap.newKeySet());
+            while (requestIdsByRun.size() > MAX_CORRELATION_RUNS) {
+                requestIdsByRun.remove(requestIdsByRun.keySet().iterator().next());
+            }
+        }
+    }
+
+    /** Only request IDs actually returned by the defender are eligible for evidence correlation. */
+    public Optional<Set<String>> observedRequestIds(String runId) {
+        synchronized (requestIdsByRun) {
+            Set<String> ids = requestIdsByRun.get(runId);
+            return ids == null ? Optional.empty() : Optional.of(Set.copyOf(ids));
+        }
+    }
+
+    private void trackRequestId(String runId, String requestId) {
+        if (requestId == null || requestId.isBlank()) return;
+        synchronized (requestIdsByRun) {
+            Set<String> ids = requestIdsByRun.get(runId);
+            if (ids != null) ids.add(requestId);
+        }
+    }
 
     public RunManager(SimulatorProperties properties,
                       TargetSettings targetSettings,
@@ -100,6 +133,7 @@ public class RunManager {
         String baseUrl = targetSettings.baseUrl();
         String runId = UUID.randomUUID().toString();
         ActiveRun run = new ActiveRun(runId, config, baseUrl, clock.instant());
+        trackRun(runId);
 
         TargetHandshake handshake = defenderClient.handshake(baseUrl);
         if (!handshake.reachable() || !handshake.compatible()) {
@@ -144,6 +178,7 @@ public class RunManager {
         String baseUrl = targetSettings.baseUrl();
         String runId = UUID.randomUUID().toString();
         ActiveRun run = new ActiveRun(runId, config, baseUrl, clock.instant());
+        trackRun(runId);
         run.addPlanned(1);
         TargetHandshake handshake = defenderClient.handshake(baseUrl);
         if (!handshake.reachable() || !handshake.compatible()) {
@@ -197,6 +232,7 @@ public class RunManager {
     }
 
     private void applyResult(ActiveRun run, DefenderLoginResult result) {
+        if (!result.transportFailure()) trackRequestId(run.runId(), result.requestId());
         if (result.transportFailure()) {
             run.recordTransportError();
             return;

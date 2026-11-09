@@ -60,6 +60,9 @@ class RunManagerTest {
     private static void respond(com.sun.net.httpserver.HttpExchange exchange, String body) throws IOException {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().add("Content-Type", "application/json");
+        if (exchange.getRequestURI().getPath().endsWith("/auth/login")) {
+            exchange.getResponseHeaders().add("X-ANVEX-Request-Id", java.util.UUID.randomUUID().toString());
+        }
         exchange.sendResponseHeaders(200, bytes.length);
         try (OutputStream out = exchange.getResponseBody()) {
             out.write(bytes);
@@ -122,6 +125,8 @@ class RunManagerTest {
         assertThat(finished.counters().authenticationFailure()).isEqualTo(finished.counters().sent());
         assertThat(finished.counters().transportErrors()).isZero();
         assertThat(loginRequests.get()).isEqualTo(finished.counters().sent());
+        assertThat(runManager.observedRequestIds(finished.runId())).isPresent()
+                .get().satisfies(ids -> assertThat(ids).hasSize((int) finished.counters().completed()));
     }
 
     @Test

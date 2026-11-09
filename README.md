@@ -28,7 +28,7 @@ ANVEX is a two-service cybersecurity lab built with **Java 21, Spring Boot, Reac
 | --- | --- |
 | ![Original ANVEX evidence inspection view](docs/screenshots/02-defender-evidence.png) | ![Original ANVEX scenario interface](docs/screenshots/09-simulator-scenario.png) |
 
-The React simulator now also contains an **experimental Mission Control** screen that connects simulator progress with defender overview data. Its full cross-platform UI and two-physical-laptop behavior are still being validated; the screenshots above are **from v1**, not staged Mission Control results.
+The React simulator now also contains an **experimental Mission Control** screen that connects simulator progress with defender overview data. A recent-evidence view correlates decisions to run requests via **defender-issued request IDs**, never by timestamps alone; it currently examines only the 20 most recent defender decisions. Its full cross-platform UI and two-physical-laptop behavior are still being validated; the screenshots above are **from v1**, not staged Mission Control results.
 
 ## How it works
 
