@@ -8,6 +8,8 @@ ANVEX is a two-service cybersecurity lab built with **Java 21, Spring Boot, Reac
 
 > **Scope:** ANVEX is an educational blue-team engineering environment with dummy accounts. It is **not** a production authentication gateway or a tool for testing third-party targets.
 
+**Original ANVEX student project team:** **Akshit Taran Donthu · Korem Sai Rithvik Reddy · Venkata Karthik Samula** (CBIT). The repository is currently maintained by [@VKarthikS](https://github.com/VKarthikS); hosting this repository does not imply sole authorship of the original team project.
+
 ![Original v1 defender console showing active protection](docs/screenshots/05-defender-monitor-protection-on.png)
 
 ## See ANVEX in two minutes
@@ -120,6 +122,14 @@ See [Verification](docs/VERIFICATION.md), [Roadmap](docs/ROADMAP.md), and [Secur
 
 ## Credits and use
 
-ANVEX originated as a student team project. This portfolio repository is maintained under [@VKarthikS](https://github.com/VKarthikS); original collaborators should be credited according to their contributions. This repository has **no open-source license yet**; public visibility alone does not grant reuse rights.
+ANVEX originated as a collaborative Java Programming course-end project at Chaitanya Bharathi Institute of Technology (CBIT). Its original student project team was:
+
+- **Akshit Taran Donthu**
+- **Korem Sai Rithvik Reddy**
+- **Venkata Karthik Samula**
+
+The current portfolio repository is maintained under [@VKarthikS](https://github.com/VKarthikS). GitHub commit history and repository ownership alone should **not** be treated as the full record of the original project team's contributions. Specific responsibilities and source-code authorship should be documented only after verification with the team. Please retain original team attribution in presentations, portfolio descriptions, and derivatives.
+
+This repository has **no open-source license yet**; public visibility alone does not grant reuse rights.
 
 For implementation discussions, see [Interview notes](docs/INTERVIEW_NOTES.md).
