@@ -80,6 +80,7 @@ export function MissionView() {
   const mode = defender?.protection.mode;
   const progress = planned > 0 ? Math.min(100, (sent / planned) * 100) : 0;
   const isManual = form.scenarioId === 'manual-login';
+  const observationOnlyComplete = mode === 'OFF' && currentRun?.state === 'COMPLETED' && observedAuthentications > 0;
   const stage = [
     {
       title: 'Connect',
@@ -104,14 +105,16 @@ export function MissionView() {
       active: sent > 0 && observedAuthentications === 0 && denied === 0,
     },
     {
-      title: 'Respond',
+      title: 'Outcome',
       detail: denied > 0
-        ? `${formatInteger(denied)} requests rejected`
-        : mode === 'OFF'
-          ? 'Observation only — no enforced blocks'
-          : 'Await measured enforcement',
-      complete: denied > 0,
-      active: sent > 0 && denied === 0,
+        ? `${formatInteger(denied)} requests rejected by defender`
+        : observationOnlyComplete
+          ? 'Observation-only baseline recorded; no blocks expected'
+          : mode === 'OFF'
+            ? 'Collecting observation-only baseline'
+            : 'Await measured enforcement',
+      complete: denied > 0 || observationOnlyComplete,
+      active: sent > 0 && denied === 0 && !observationOnlyComplete,
     },
   ];
 
@@ -119,12 +122,17 @@ export function MissionView() {
     <div className="stack mission">
       <section className="mission-hero">
         <div className="mission-hero__main">
-          <div className="mission-eyebrow"><span className="mission-eyebrow__mark" /> ANVEX / FIELD LAB 01</div>
-          <h1 className="mission-headline">Watch an attack.<br /><span>Understand the defense.</span></h1>
+          <div className="mission-eyebrow"><span className="mission-eyebrow__mark" /> ANVEX / AUTHENTICATION DEFENSE LAB</div>
+          <h1 className="mission-headline">Watch the signal.<br /><span>Trace the defense.</span></h1>
           <p className="mission-intro">
             Run a controlled authentication scenario against the ANVEX defender. Follow the actual request outcomes,
             inspect the detection evidence, and see exactly what protection did — or did not — prevent.
           </p>
+          <div className="mission-hero__context" aria-label="Experiment context">
+            <div><span>SCENARIO</span><strong>{displayScenario(currentRun?.scenarioId ?? form.scenarioId)}</strong></div>
+            <div><span>DEFENDER</span><strong>{verified ? 'Connected and verified' : 'Awaiting connection'}</strong></div>
+            <div><span>MODE</span><strong>{mode === 'ON' ? 'Protection enabled' : mode === 'OFF' ? 'Observation only' : 'Unverified'}</strong></div>
+          </div>
           <div className="mission-hero__actions">
             <button
               type="button"
@@ -162,8 +170,8 @@ export function MissionView() {
       ) : null}
 
       <div className="mission-section-title">
-        <div><span className="eyebrow">01 / experiment path</span><h2>The four checkpoints</h2></div>
-        <span className="mono dim mission-small">Only observed conditions advance a checkpoint</span>
+        <div><span className="eyebrow">01 / experiment path</span><h2>Follow the security decision</h2></div>
+        <span className="mono dim mission-small">All checkpoints use measured service outcomes</span>
       </div>
       <div className="mission-stage-grid" aria-label="Experiment checkpoints">
         {stage.map((item, index) => (
@@ -176,7 +184,7 @@ export function MissionView() {
       </div>
 
       <div className="mission-section-title">
-        <div><span className="eyebrow">02 / live experiment</span><h2>What the systems reported</h2></div>
+        <div><span className="eyebrow">02 / live experiment</span><h2>Live request outcomes</h2></div>
         <span className="mono dim mission-small">{lastCheckedAt ? `Defender last checked ${formatDateTime(lastCheckedAt)}` : 'Awaiting first defender snapshot'}</span>
       </div>
       <section className="mission-telemetry" aria-label="Measured run results">

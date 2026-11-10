@@ -40,7 +40,12 @@ function ConnectionPill() {
   return <StatusPill tone="warn">Stale — reconnecting</StatusPill>;
 }
 
-function TopBar({ view, onSelect }: { view: string; onSelect: (id: string) => void }) {
+function TopBar({ view, onSelect, presenter, onTogglePresenter }: {
+  view: string;
+  onSelect: (id: string) => void;
+  presenter: boolean;
+  onTogglePresenter: () => void;
+}) {
   return (
     <header className="topbar">
       <div className="topbar__brand">
@@ -64,6 +69,18 @@ function TopBar({ view, onSelect }: { view: string; onSelect: (id: string) => vo
       </nav>
 
       <div className="topbar__status">
+        {view === 'mission' && (
+          <button
+            type="button"
+            className={`presenter-toggle${presenter ? ' is-active' : ''}`}
+            onClick={onTogglePresenter}
+            aria-pressed={presenter}
+            title={presenter ? 'Restore controls and navigation' : 'Expand Mission Control for a demo or screen recording'}
+          >
+            <Icon name={presenter ? 'close' : 'evidence'} size={15} />
+            {presenter ? 'Exit presenter view' : 'Presenter view'}
+          </button>
+        )}
         <ConnectionPill />
       </div>
     </header>
@@ -87,6 +104,7 @@ function renderView(view: string) {
 
 function Shell() {
   const [view, setView] = useState<string>(readViewFromHash);
+  const [presenter, setPresenter] = useState(false);
 
   useEffect(() => {
     const onHashChange = () => setView(readViewFromHash());
@@ -100,8 +118,8 @@ function Shell() {
   };
 
   return (
-    <div className="shell">
-      <TopBar view={view} onSelect={select} />
+    <div className={`shell${presenter && view === 'mission' ? ' is-presenter' : ''}`}>
+      <TopBar view={view} onSelect={select} presenter={presenter} onTogglePresenter={() => setPresenter((value) => !value)} />
       <div className="workspace">
         <aside className="workspace__control" aria-label="Run controls">
           <ControlColumn />
