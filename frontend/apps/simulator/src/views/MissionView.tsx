@@ -71,7 +71,9 @@ export function MissionView() {
   const counters = currentRun?.counters;
   const sent = counters?.sent ?? 0;
   const planned = counters?.planned ?? 0;
+  const succeeded = counters?.authenticationSuccess ?? 0;
   const failed = counters?.authenticationFailure ?? 0;
+  const observedAuthentications = succeeded + failed;
   const denied = (counters?.rateLimited ?? 0) + (counters?.sourceBlocked ?? 0);
   const running = currentRun?.state === 'RUNNING' || currentRun?.state === 'STOPPING';
   const verified = Boolean(overview?.available);
@@ -93,9 +95,13 @@ export function MissionView() {
     },
     {
       title: 'Observe',
-      detail: failed > 0 ? `${formatInteger(failed)} failed logins measured` : 'Await authentication outcomes',
-      complete: failed > 0,
-      active: sent > 0 && failed === 0,
+      detail: observedAuthentications > 0
+        ? `${formatInteger(succeeded)} successful, ${formatInteger(failed)} failed`
+        : denied > 0
+          ? `${formatInteger(denied)} requests rejected before authentication`
+          : 'Await authentication outcomes',
+      complete: observedAuthentications > 0 || denied > 0,
+      active: sent > 0 && observedAuthentications === 0 && denied === 0,
     },
     {
       title: 'Respond',
@@ -174,7 +180,7 @@ export function MissionView() {
         <span className="mono dim mission-small">{lastCheckedAt ? `Defender last checked ${formatDateTime(lastCheckedAt)}` : 'Awaiting first defender snapshot'}</span>
       </div>
       <section className="mission-telemetry" aria-label="Measured run results">
-        <Metric name="Sent" number={sent} detail="simulator requests" />
+        <Metric name="Auth successes" number={succeeded} detail="authenticated replies" />
         <Metric name="Auth failures" number={failed} detail="defender replies" tone="warn" />
         <Metric name="Rate limited" number={counters?.rateLimited ?? 0} detail="HTTP 429 rejections" tone="violet" />
         <Metric name="Source blocked" number={counters?.sourceBlocked ?? 0} detail="HTTP 429 rejections" tone="alert" />
