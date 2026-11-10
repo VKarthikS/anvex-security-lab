@@ -22,13 +22,15 @@ ANVEX is a two-service cybersecurity lab built with **Java 21, Spring Boot, Reac
 
 **Start here:** [Two-minute showcase guide](docs/PORTFOLIO_SHOWCASE.md) · [Full demonstration](docs/DEMO_SCRIPT.md) · [Architecture](ARCHITECTURE.md)
 
+**Recording tip:** In Simulator → Mission Control, choose **Presenter view** in the header to hide the left-hand controls and show the live experiment at a readable size. Always record actual runs. The presentation mode changes only layout, not measurements or detection logic.
+
 **Actual interface screenshots from the original v1 build:**
 
 | Detection evidence | Simulator scenario controls |
 | --- | --- |
 | ![Original ANVEX evidence inspection view](docs/screenshots/02-defender-evidence.png) | ![Original ANVEX scenario interface](docs/screenshots/09-simulator-scenario.png) |
 
-The React simulator now also contains an **experimental Mission Control** screen that connects simulator progress with defender overview data. A recent-evidence view correlates decisions to run requests via **defender-issued request IDs**, never by timestamps alone; it currently examines only the 20 most recent defender decisions. Its full cross-platform UI and two-physical-laptop behavior are still being validated; the screenshots above are **from v1**, not staged Mission Control results.
+The React simulator now contains **Mission Control**, a guided view of the live authentication experiment. It correlates defender decisions with simulator requests using **defender-issued request IDs**, never timestamps alone, and inspects the 20 most recent decisions. **Presenter View** in the simulator header expands the dashboard for a readable demo or screen recording. The maintainer has reported a successful local two-service walkthrough on Windows; a two-physical-laptop LAN test and independently verified security efficacy study remain outstanding. The screenshots above are from the original v1 build, not staged Mission Control results.
 
 ## How it works
 
@@ -110,9 +112,9 @@ scripts/     Build, connectivity, smoke-test and release helpers
 
 ## What is verified and what isn't
 
-- **Already demonstrated:** Initial GitHub Actions **Build and test** workflow passed; original development records describe 33 Java tests and a smoke suite. The repository's live CI status is the authority for later commits.
-- **Needs an end-to-end demo:** Mission Control against a fresh build and the source-level comparison-integrity regression tests on GitHub Actions.
-- **Not yet demonstrated:** A real two-laptop physical LAN exercise, broad false-positive evaluation, production TLS and authentication hardening, or statistically significant detection accuracy.
+- **Automated verification:** GitHub Actions builds the React apps, type-checks TypeScript, and runs the Java 21 Maven test suite on pull requests and pushes to `main`. Check the live CI badge for the newest result.
+- **Maintainer-reported local validation:** The defender and simulator opened on Windows, and the controlled test scenarios completed. This report has not yet been independently reproduced from a fresh clone.
+- **Still outstanding:** A recorded end-to-end portfolio demo, two physical laptops communicating across a LAN, broad false-positive evaluation, production TLS/authentication hardening, and statistically significant detection accuracy.
 
 See [Verification](docs/VERIFICATION.md), [Roadmap](docs/ROADMAP.md), and [Security & limitations](SECURITY.md). The project is a learning lab: the classifier does **not** prove password reuse, and source-IP blocks may affect legitimate users behind shared NAT.
 
