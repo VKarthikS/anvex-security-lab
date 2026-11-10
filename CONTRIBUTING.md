@@ -15,4 +15,4 @@ Add deterministic tests for any new detection/protection rule, document changed 
 
 ## Credit
 
-The original implementation was a student team effort. Contributors should be credited accurately, with author details confirmed before publishing.
+The original ANVEX course-end project team comprises **Akshit Taran Donthu, Korem Sai Rithvik Reddy, and Venkata Karthik Samula**. The current repository is maintained by **VKarthikS**, which does not imply sole original project authorship. Do not assign individual implementation roles without verification with the team. Preserve all three team credits in presentations and showcases.
